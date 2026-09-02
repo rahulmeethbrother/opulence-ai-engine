@@ -348,7 +348,7 @@ class VideoEngine:
             # Crop/Resize Logic based on Ratio
             try:
                 ratio = settings.ratio if settings else "9:16"
-                w, h = 1080, 1920
+                w, h = 720, 1280
                 if ratio == "16:9": w, h = 1920, 1080
                 elif ratio == "1:1": w, h = 1080, 1080
 
@@ -535,7 +535,7 @@ class VideoEngine:
             )
             if "h264_nvenc" not in encoder_check.stdout:
                 codec = "libx264"
-        final_video.write_videofile(str(output_filename), fps=24, codec=codec, audio_codec='aac', threads=4)
+        final_video.write_videofile(str(output_filename), fps=15, codec=codec, audio_codec='aac', threads=4)
         if not output_filename.exists() or output_filename.stat().st_size <= 0:
             print(f"❌ Video export failed or empty: {output_filename}")
             return None
