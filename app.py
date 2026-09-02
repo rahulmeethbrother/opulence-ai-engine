@@ -98,7 +98,13 @@ class ApiKeys(BaseModel):
 def load_backend_keys():
     secrets_path = BASE_DIR / "backend_secrets.json"
     if not secrets_path.exists():
-        return ApiKeys()
+        return ApiKeys(
+            llm_key=os.environ.get("OPULENCE_LLM_KEY", ""),
+            llm_url=os.environ.get("OPULENCE_LLM_URL", "https://openrouter.ai/api/v1/chat/completions"),
+            llm_model=os.environ.get("OPULENCE_LLM_MODEL", "qwen/qwen3-coder:free"),
+            pexels_key=os.environ.get("OPULENCE_PEXELS_KEY", ""),
+            pixabay_key=os.environ.get("OPULENCE_PIXABAY_KEY", ""),
+        )
     return ApiKeys(**json.loads(secrets_path.read_text(encoding="utf-8")))
 
 BACKEND_API_KEYS = load_backend_keys()
