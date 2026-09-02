@@ -68,7 +68,9 @@ const uiEnglish = {
     '服务连接错误，请稍后重试': 'Service connection error. Try again later', '请先填写': 'Please enter ',
     '和': ' and ', '才能使用 Seedream AI 生图': ' to use Seedream AI images',
     '云扬（男声）': 'Guy (male)', '晓晓（女声）': 'Jenny (female)', '不配音（仅素材模式）': 'No voiceover',
-    '脚本到Video': 'Generate Video'
+    '脚本到Video': 'Generate Video', '素材已保存到': 'Media saved to', '视频合成已关闭': 'video creation disabled',
+    '视频已生成': 'Video generated', '正在搜索素材': 'Searching media', '正在合成视频': 'Rendering video',
+    '已开始': 'Started', '就绪': 'Ready', '出错': 'Error'
 };
 function translateDynamicUi() {
     const nodes = document.querySelectorAll('body *');
@@ -259,9 +261,9 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
     const voiceSelect = document.getElementById('voice-select');
 
     const voiceMap = {
-        'en-US': [
-            { name: '🎙️ Christopher（免费）', value: 'en-US-ChristopherNeural' },
-            { name: '🎤 Jenny（免费）', value: 'en-US-JennyNeural' },
+            'en-US': [
+            { name: '🎙️ Christopher (Free)', value: 'en-US-ChristopherNeural' },
+            { name: '🎤 Jenny (Free)', value: 'en-US-JennyNeural' },
             { name: '🌟 Adam（ElevenLabs）', value: 'eleven_pNInz6obpg8ndclQU7Nc' },
             { name: '🌟 Antoni（ElevenLabs）', value: 'eleven_ErXwBPLxhSj618Y4yxKI' },
             { name: '🌟 Bella（ElevenLabs）', value: 'eleven_EXAVITQu4vr4xnSDxMaL' }
@@ -551,21 +553,6 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
 
         if (autoVideo && currentMode === 'single' && source !== 'ai') {
             showToast('单条素材搜索不会自动合成视频；请切换到脚本模式，或关闭自动合成视频', 'error');
-            return;
-        }
-
-        if (source === 'ai' && (!keys.llm_key || !keys.seedream_key)) {
-            showApiSettings();
-            const missing = [];
-            if (!keys.llm_key) missing.push('AI 文本密钥');
-            if (!keys.seedream_key) missing.push('Seedream 生图密钥');
-            showToast(`请先填写 ${missing.join(' 和 ')}，才能使用 Seedream AI 生图`, 'error');
-            return;
-        }
-
-        if (currentMode === 'script' && source !== 'ai' && !keys.llm_key) {
-            showApiSettings();
-            showToast('脚本模式使用素材来源需要先填写 AI 文本密钥，用于分镜关键词分析', 'error');
             return;
         }
 
