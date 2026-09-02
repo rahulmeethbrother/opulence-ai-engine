@@ -325,10 +325,10 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
         if (suspenseVibe) suspenseVibe.checked = true;
 
         if (languageSelect) {
-            languageSelect.value = 'zh-CN';
+            languageSelect.value = 'en-US';
             updateVoices();
         }
-        if (voiceSelect) voiceSelect.value = 'zh-CN-YunyangNeural';
+        if (voiceSelect) voiceSelect.value = 'en-US-ChristopherNeural';
 
         const musicSelect = document.getElementById('music-select');
         if (musicSelect) musicSelect.value = 'none';

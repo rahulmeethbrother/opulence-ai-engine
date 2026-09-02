@@ -4,6 +4,7 @@ import random
 import re
 import sys
 import math
+import subprocess
 from pathlib import Path
 from edge_tts import Communicate
 from moviepy import VideoFileClip, ImageClip, AudioFileClip, TextClip, CompositeVideoClip, concatenate_videoclips
@@ -527,6 +528,13 @@ class VideoEngine:
         # Export
         output_filename = self.output_dir / "final_aesthetic_video.mp4"
         codec = os.environ.get("VIDEO_CODEC", "libx264")
+        if codec == "h264_nvenc":
+            encoder_check = subprocess.run(
+                ["ffmpeg", "-hide_banner", "-encoders"],
+                capture_output=True, text=True, check=False,
+            )
+            if "h264_nvenc" not in encoder_check.stdout:
+                codec = "libx264"
         final_video.write_videofile(str(output_filename), fps=24, codec=codec, audio_codec='aac', threads=4)
         if not output_filename.exists() or output_filename.stat().st_size <= 0:
             print(f"❌ Video export failed or empty: {output_filename}")
