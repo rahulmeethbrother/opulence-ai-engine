@@ -6,6 +6,8 @@ import re
 import json
 import random
 import sys
+import uuid
+from contextvars import ContextVar
 from urllib.parse import quote
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
@@ -20,13 +22,13 @@ for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8", errors="replace")
 
 # ═══════════════════════════════════════════════════════════════
-# VUZA — Video Utility for Zero-cost Automation
+# Opulence AI Engine — AI video creation and media automation
 # Built by Ali R. | github.com/AliRash3ed
 # ═══════════════════════════════════════════════════════════════
 
 from aesthetic_scraper import PinterestScraper, PexelsScraper, PixabayScraper, VideoDownloader, LLMProcessor, WebScraper
 
-app = FastAPI(title="VUZA — 中文悬疑短视频自动生成工具")
+app = FastAPI(title="Opulence AI Engine — 中文悬疑短视频自动生成工具")
 
 BASE_DIR = Path(__file__).parent
 DOWNLOAD_DIR = BASE_DIR / "downloads"
@@ -37,11 +39,34 @@ static_path.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 app.mount("/downloads", StaticFiles(directory=str(DOWNLOAD_DIR)), name="downloads")
 
-scraping_status = {
+_default_status = {
     "is_running": False, "progress": 0,
     "message": "就绪", "mode": "single", "results": [],
     "status": "idle", "final_video": None, "error": None
 }
+MAX_CONCURRENT_JOBS = 4
+_active_jobs = 0
+_jobs = {}
+_latest_job_id = None
+_status_context = ContextVar("status_context", default=_default_status)
+
+
+class JobStatusProxy:
+    """Keep the existing status update code job-local via async task context."""
+    def _status(self):
+        return _status_context.get()
+
+    def __getitem__(self, key):
+        return self._status()[key]
+
+    def __setitem__(self, key, value):
+        self._status()[key] = value
+
+    def update(self, *args, **kwargs):
+        self._status().update(*args, **kwargs)
+
+
+scraping_status = JobStatusProxy()
 
 # ── Models ──
 class VideoSettings(BaseModel):
@@ -70,6 +95,14 @@ class ApiKeys(BaseModel):
     yt_client_secret: str = ""
     eleven_key: str = ""
 
+def load_backend_keys():
+    secrets_path = BASE_DIR / "backend_secrets.json"
+    if not secrets_path.exists():
+        return ApiKeys()
+    return ApiKeys(**json.loads(secrets_path.read_text(encoding="utf-8")))
+
+BACKEND_API_KEYS = load_backend_keys()
+
 class ScrapeRequest(BaseModel):
     query: Optional[str] = None
     script: Optional[str] = None
@@ -84,7 +117,7 @@ class ScrapeRequest(BaseModel):
     yt_upload: bool = False
     api_keys: Optional[ApiKeys] = None
 
-VALID_SOURCES = {"ai", "pinterest", "pexels", "pixabay"}
+VALID_SOURCES = {"pinterest", "pexels", "pixabay"}
 VALID_MEDIA_TYPES = {"photo", "video"}
 VALID_MODES = {"single", "script"}
 
@@ -94,15 +127,19 @@ async def read_index():
     return FileResponse(static_path / "index.html")
 
 @app.get("/api/status")
-async def get_status():
-    return scraping_status
+async def get_status(job_id: Optional[str] = None):
+    """Return a specific job, or the newest job for existing clients."""
+    status = _jobs.get(job_id) if job_id else (_jobs.get(_latest_job_id) if _latest_job_id else _default_status)
+    if status is None:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    return status
 
 @app.post("/api/analyze")
 async def analyze_script(request: ScrapeRequest):
     if not request.script:
         raise HTTPException(status_code=400, detail="请先输入脚本")
 
-    api_keys = request.api_keys or ApiKeys()
+    api_keys = BACKEND_API_KEYS
     require_llm_key(api_keys, "AI 标题分析")
     llm = LLMProcessor(api_key=api_keys.llm_key, api_url=api_keys.llm_url, model=api_keys.llm_model)
     analysis = llm.generate_viral_metadata(request.script)
@@ -122,7 +159,7 @@ async def generate_script(request: GenerateScriptRequest):
     if not request.topic:
         raise HTTPException(status_code=400, detail="请先输入主题")
 
-    api_keys = request.api_keys or ApiKeys()
+    api_keys = BACKEND_API_KEYS
     require_llm_key(api_keys, "脚本生成")
     llm = LLMProcessor(api_key=api_keys.llm_key, api_url=api_keys.llm_url, model=api_keys.llm_model)
     script = llm.generate_full_script(request.topic, vibe=request.vibe)
@@ -141,7 +178,7 @@ async def scrape_url_endpoint(request: ScrapeUrlRequest):
     if not request.url:
         raise HTTPException(status_code=400, detail="请先粘贴链接")
 
-    api_keys = request.api_keys or ApiKeys()
+    api_keys = BACKEND_API_KEYS
     require_llm_key(api_keys, "链接内容总结")
 
     scraper = WebScraper()
@@ -159,7 +196,7 @@ async def scrape_url_endpoint(request: ScrapeUrlRequest):
 
 # ── Helpers ──
 def make_scraper(src, output_dir, api_keys=None):
-    keys = api_keys or ApiKeys()
+    keys = BACKEND_API_KEYS
     if src == "pinterest": return PinterestScraper(output_dir=output_dir)
     if src == "pexels": return PexelsScraper(output_dir=output_dir, api_key=keys.pexels_key)
     if src == "pixabay": return PixabayScraper(output_dir=output_dir, api_key=keys.pixabay_key)
@@ -227,7 +264,7 @@ def validate_scrape_request_options(request):
 def validate_ai_image_keys(request):
     if request.source != "ai":
         return
-    api_keys = request.api_keys or ApiKeys()
+    api_keys = BACKEND_API_KEYS
     missing = []
     if not (api_keys.llm_key or "").strip():
         missing.append("llm_key")
@@ -239,7 +276,7 @@ def validate_ai_image_keys(request):
 def validate_script_keyword_key(request):
     if request.mode != "script" or request.source == "ai":
         return
-    api_keys = request.api_keys or ApiKeys()
+    api_keys = BACKEND_API_KEYS
     if not (api_keys.llm_key or "").strip():
         raise RuntimeError("脚本模式使用 Pinterest/Pexels/Pixabay 素材源时，需要先配置 AI 文本密钥，用于把旁白拆成搜索关键词。")
 
@@ -634,8 +671,10 @@ async def universal_search(keyword, media_type, count, primary_source, project_p
     return []
 
 # ── Main Scraping ──
-async def run_scrape(request: ScrapeRequest):
-    global scraping_status
+async def run_scrape(request: ScrapeRequest, job_id: str):
+    global _active_jobs
+    job_status = _jobs[job_id]
+    token = _status_context.set(job_status)
     set_status(
         "running",
         message="开始处理...",
@@ -650,7 +689,7 @@ async def run_scrape(request: ScrapeRequest):
         validate_scrape_request_options(request)
         validate_request_api_dependencies(request)
         source, media_type, count = request.source, request.media_type, request.count
-        api_keys = request.api_keys or ApiKeys()
+        api_keys = BACKEND_API_KEYS
 
         if request.mode == "single" and source == "ai" and request.auto_video:
             topic = (request.query or "").strip()
@@ -685,6 +724,12 @@ async def run_scrape(request: ScrapeRequest):
                     scraping_status["message"] = f"🧠 AI 正在分析脚本 {script_idx+1}/{len(scripts)}..."
                     llm = LLMProcessor(api_key=api_keys.llm_key, api_url=api_keys.llm_url, model=api_keys.llm_model)
                     keyword_data = llm.extract_keywords(script, vibe=request.vibe)
+                    if not keyword_data:
+                        # Continue with sentence-based stock searches when the optional LLM is rate-limited.
+                        keyword_data = [
+                            {"sentence": row["sentence"], "keyword": row["sentence"]}
+                            for row in local_script_segments(script)
+                        ]
 
                 if not keyword_data:
                     raise RuntimeError((llm.last_error if llm else "") or "没有生成可用的分镜，请检查脚本是否为空。")
@@ -822,7 +867,7 @@ async def run_scrape(request: ScrapeRequest):
                             uploader = load_youtube_uploader()(api_keys.yt_client_id, api_keys.yt_client_secret)
                             # Get metadata from AI if available, otherwise fallback
                             title = project_name.replace("_", " ").title()
-                            description = "Automated video created with VUZA."
+                            description = "Automated video created with Opulence AI Engine."
                             tags = []
 
                             # Try to get metadata from previous AI analysis if it was run
@@ -849,7 +894,7 @@ async def run_scrape(request: ScrapeRequest):
             character_reference_path = None
             image_prompt = None
             if source == "ai":
-                api_keys = request.api_keys or ApiKeys()
+                api_keys = BACKEND_API_KEYS
                 llm = LLMProcessor(api_key=api_keys.llm_key, api_url=api_keys.llm_url, model=api_keys.llm_model)
                 character_profile = llm.generate_character_profile(query)
                 if not character_profile:
@@ -873,12 +918,15 @@ async def run_scrape(request: ScrapeRequest):
         import traceback; traceback.print_exc()
     finally:
         scraping_status["is_running"] = False
+        _active_jobs -= 1
+        _status_context.reset(token)
 
 @app.post("/api/scrape")
 async def start_scrape(request: ScrapeRequest, background_tasks: BackgroundTasks):
-    print(f"📥 VUZA Request: Mode={request.mode}, Source={request.source}, Vibe={request.vibe}")
-    if scraping_status["is_running"]:
-        return JSONResponse(status_code=400, content={"message": "正在处理上一个任务，请稍等"})
+    global _active_jobs, _latest_job_id
+    print(f"📥 Opulence AI Engine Request: Mode={request.mode}, Source={request.source}, Vibe={request.vibe}")
+    if _active_jobs >= MAX_CONCURRENT_JOBS:
+        return JSONResponse(status_code=429, content={"message": f"最多同时处理 {MAX_CONCURRENT_JOBS} 个任务，请稍后重试"})
     try:
         validate_scrape_request_options(request)
         validate_request_api_dependencies(request)
@@ -894,8 +942,12 @@ async def start_scrape(request: ScrapeRequest, background_tasks: BackgroundTasks
             mode=request.mode,
         )
         raise HTTPException(status_code=400, detail=detail) from exc
-    background_tasks.add_task(run_scrape, request)
-    return {"message": "已开始"}
+    job_id = uuid.uuid4().hex
+    _jobs[job_id] = dict(_default_status, mode=request.mode, results=[])
+    _active_jobs += 1
+    _latest_job_id = job_id
+    background_tasks.add_task(run_scrape, request, job_id)
+    return {"message": "已开始", "job_id": job_id}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

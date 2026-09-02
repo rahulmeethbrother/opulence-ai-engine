@@ -16,7 +16,7 @@ for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8", errors="replace")
 
 # ═══════════════════════════════════════════════════════════════
-# VUZA — Video Utility for Zero-cost Automation
+# Opulence AI Engine — AI video creation and media automation
 # Built by Ali R. | github.com/AliRash3ed
 # ═══════════════════════════════════════════════════════════════
 
@@ -325,8 +325,8 @@ class LLMProcessor:
         return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://vuza.local",
-            "X-Title": "VUZA Chinese Suspense Video Generator"
+            "HTTP-Referer": "https://opulence-ai-engine.local",
+            "X-Title": "Opulence AI Engine Chinese Suspense Video Generator"
         }
 
     def _format_api_error(self, response):

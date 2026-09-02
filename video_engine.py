@@ -3,6 +3,7 @@ import os
 import random
 import re
 import sys
+import math
 from pathlib import Path
 from edge_tts import Communicate
 from moviepy import VideoFileClip, ImageClip, AudioFileClip, TextClip, CompositeVideoClip, concatenate_videoclips
@@ -497,6 +498,12 @@ class VideoEngine:
         # Concatenate
         final_video = concatenate_videoclips(final_clips, method="compose")
 
+        # Short scripts should still produce a usable short-form video.
+        minimum_duration = 30.0
+        if final_video.duration < minimum_duration:
+            repeats = math.ceil(minimum_duration / final_video.duration)
+            final_video = concatenate_videoclips([final_video] * repeats, method="compose").subclipped(0, minimum_duration)
+
         # Overlay Watermark
         if watermark_clip:
             watermark_clip = watermark_clip.with_duration(final_video.duration)
@@ -519,7 +526,8 @@ class VideoEngine:
 
         # Export
         output_filename = self.output_dir / "final_aesthetic_video.mp4"
-        final_video.write_videofile(str(output_filename), fps=24, codec='libx264', audio_codec='aac', threads=4)
+        codec = os.environ.get("VIDEO_CODEC", "libx264")
+        final_video.write_videofile(str(output_filename), fps=24, codec=codec, audio_codec='aac', threads=4)
         if not output_filename.exists() or output_filename.stat().st_size <= 0:
             print(f"❌ Video export failed or empty: {output_filename}")
             return None

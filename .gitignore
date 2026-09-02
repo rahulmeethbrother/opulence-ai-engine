@@ -21,6 +21,7 @@ pytest-cache-files*/
 *.pyc.*
 *.pyo
 .env
+backend_secrets.json
 venv/
 env/
 .venv/

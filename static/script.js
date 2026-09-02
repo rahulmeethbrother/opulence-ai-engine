@@ -1,4 +1,4 @@
-console.log("🚀 VUZA v5 — 中文悬疑短视频自动生成工具");
+console.log("Opulence AI Engine v5 — AI video creation engine");
 
 document.addEventListener('DOMContentLoaded', () => {
     // ── Elements ──
@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMode = 'single';
     let statusInterval = null;
     let finalVideoUrl = '';
+    let currentJobId = null;
     let pollConnectionErrorShown = false;
 
     // ═══ SETTINGS PANEL TOGGLE ═══
@@ -46,11 +47,51 @@ document.addEventListener('DOMContentLoaded', () => {
             settingsBody.classList.toggle('hidden');
             settingsPanel.classList.toggle('open');
         });
-    }
+}
+
+// Keep runtime notifications and dynamically generated controls in English.
+const uiEnglish = {
+    '设置已保存': 'Settings saved', '模板已载入': 'Template loaded', '正在提取...': 'Extracting...',
+    '已提取并总结成脚本': 'Script extracted and summarized', '网络错误': 'Network error',
+    '生成脚本': 'Generate Script', '正在生成...': 'Generating...', '脚本生成成功': 'Script generated',
+    '请先粘贴文章链接': 'Please paste an article URL first', '请先输入悬疑主题或粘贴长篇原文': 'Enter a topic or paste source text first',
+    '请先在 API 设置里填写 AI API 密钥': 'Add your AI API key in API Settings first', '分析完成': 'Analysis complete',
+    'AI 标题分析': 'AI Title Analysis', '请输入素材搜索词': 'Enter a media search term',
+    '请至少输入一个脚本': 'Enter at least one script', '背景音乐选项无效，请重新选择': 'Invalid music option',
+    'AI 生图模式当前只支持图片素材；如需视频素材，请切换到素材来源': 'AI image mode supports images only; choose another source for videos',
+    '自动合成视频需要选择一个 AI 配音；如需不配音，请先关闭自动合成视频': 'Select an AI voiceover or turn off auto video creation',
+    '已开始生成': 'Generation started', '已完成': 'Complete', '生成失败': 'Generation failed',
+    '处理中...': 'Processing...', '成片已生成': 'Final video ready', '下载最终视频': 'Download final video',
+    '视频': 'Video', '高清': 'HD', '已清空。': 'Cleared.', '脚本到视频': 'Generate Video',
+    '按脚本生成素材': 'Generate Media', '主题到视频': 'Topic to Video', 'AI 生成素材': 'Generate AI Media',
+    '开始搜素材': 'Search Media', '服务连接错误，请确认后端服务仍在运行': 'Service connection error. Check that the backend is running',
+    '服务连接错误，请稍后重试': 'Service connection error. Try again later', '请先填写': 'Please enter ',
+    '和': ' and ', '才能使用 Seedream AI 生图': ' to use Seedream AI images',
+    '云扬（男声）': 'Guy (male)', '晓晓（女声）': 'Jenny (female)', '不配音（仅素材模式）': 'No voiceover',
+    '脚本到Video': 'Generate Video'
+};
+function translateDynamicUi() {
+    const nodes = document.querySelectorAll('body *');
+    nodes.forEach((node) => {
+        if (node.children.length === 0) {
+            let text = node.textContent;
+            Object.entries(uiEnglish).forEach(([from, to]) => { text = text.split(from).join(to); });
+            if (text !== node.textContent) node.textContent = text;
+        }
+        ['placeholder', 'title'].forEach((attr) => {
+            if (!node.hasAttribute(attr)) return;
+            let value = node.getAttribute(attr);
+            Object.entries(uiEnglish).forEach(([from, to]) => { value = value.split(from).join(to); });
+            if (value !== node.getAttribute(attr)) node.setAttribute(attr, value);
+        });
+    });
+}
+setTimeout(translateDynamicUi, 100);
+new MutationObserver(translateDynamicUi).observe(document.body, { childList: true, subtree: true });
 
     // ═══ LOAD SAVED KEYS FROM localStorage ═══
     function loadKeys() {
-        const keys = JSON.parse(localStorage.getItem('vuza_api_keys') || '{}');
+        const keys = JSON.parse(localStorage.getItem('opulence_ai_engine_api_keys') || '{}');
         if (keys.llm_key) document.getElementById('llm-key').value = keys.llm_key;
         if (keys.llm_url) document.getElementById('llm-url').value = keys.llm_url;
         if (keys.llm_model) document.getElementById('llm-model').value = keys.llm_model;
@@ -78,12 +119,12 @@ document.addEventListener('DOMContentLoaded', () => {
             yt_client_secret: document.getElementById('yt-client-secret').value.trim(),
             eleven_key: document.getElementById('eleven-key').value.trim()
         };
-        localStorage.setItem('vuza_api_keys', JSON.stringify(keys));
+        localStorage.setItem('opulence_ai_engine_api_keys', JSON.stringify(keys));
         showToast('✅ 设置已保存', 'success');
     }
 
     function getKeys() {
-        const saved = JSON.parse(localStorage.getItem('vuza_api_keys') || '{}');
+    const saved = JSON.parse(localStorage.getItem('opulence_ai_engine_api_keys') || '{}');
         const valueOf = (id) => {
             const el = document.getElementById(id);
             return el ? el.value.trim() : '';
@@ -109,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function persistKeys(keys) {
-        localStorage.setItem('vuza_api_keys', JSON.stringify(keys));
+        localStorage.setItem('opulence_ai_engine_api_keys', JSON.stringify(keys));
     }
 
     async function readErrorMessage(response, fallback) {
@@ -277,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (el) el.checked = true;
         };
 
-        setChecked('src-ai');
+        setChecked('src-pexels');
         setChecked('type-photo');
         setChecked('ratio-9-16');
         setChecked('emoji-subs-off');
@@ -535,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoading(true);
         finalVideoUrl = '';
         pollConnectionErrorShown = false;
-        galleryContainer.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>VUZA 正在处理，请稍等...</p></div>';
+        galleryContainer.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Opulence AI Engine 正在处理，请稍等...</p></div>';
 
         try {
             const response = await fetch('/api/scrape', {
@@ -573,6 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
+                const started = await response.json();
+                currentJobId = started.job_id || null;
                 showToast('🚀 已开始生成', 'success');
                 startPollingStatus();
             } else {
@@ -590,7 +633,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusInterval) clearInterval(statusInterval);
         statusInterval = setInterval(async () => {
             try {
-                const response = await fetch('/api/status');
+                const statusUrl = currentJobId ? `/api/status?job_id=${encodeURIComponent(currentJobId)}` : '/api/status';
+                const response = await fetch(statusUrl);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const status = await response.json();
                 renderStatus(status);
