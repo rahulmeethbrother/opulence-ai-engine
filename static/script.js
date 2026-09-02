@@ -206,7 +206,7 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
         addScriptBtn.addEventListener('click', () => {
             const div = document.createElement('div');
             div.className = 'script-item';
-            div.innerHTML = `<textarea class="script-input" placeholder="粘贴另一个脚本，用于批量生成"></textarea><button type="button" class="remove-script-btn">×</button>`;
+            div.innerHTML = `<textarea class="script-input" placeholder="Paste another script for batch generation"></textarea><button type="button" class="remove-script-btn">×</button>`;
             scriptsContainer.appendChild(div);
             div.querySelector('.remove-script-btn').addEventListener('click', () => div.remove());
         });
@@ -220,32 +220,32 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
             if (!firstScript) return;
 
             if (template === 'suspense_cn') {
-                firstScript.value = "凌晨两点，我收到一条陌生短信。\n短信里只有五个字：别回头看。\n可我明明一个人住在这间屋子。\n窗外的雨声突然停了。\n门缝下面，慢慢塞进来一张旧照片。\n照片上站着的，竟然是十年前的我。\n更奇怪的是，我身后还有一个模糊的人影。\n下一秒，手机又响了：他已经进来了。";
+                firstScript.value = "At two in the morning, I received a message from an unknown number.\nIt said only five words: do not look back.\nI was supposed to be alone in the house.\nThen the rain outside suddenly stopped.\nAn old photograph slowly slid under the door.\nIt showed me exactly ten years earlier.\nBehind me stood a blurred figure.\nThen my phone rang again: he is already inside.";
                 document.getElementById('vibe-suspense').checked = true;
                 applySuspenseDefaults();
             } else if (template === 'motivational') {
-                firstScript.value = "真正拉开差距的，从来不是某一次爆发。\n而是你在没人看见的时候，依然愿意往前走。\n今天慢一点没关系，只要别停下来。\n你以为自己只是撑过了一天，其实你正在变强。";
+                firstScript.value = "The real difference is never one sudden breakthrough.\nIt is choosing to keep moving when nobody is watching.\nIt is okay to move slowly today, as long as you do not stop.\nYou think you only survived the day, but you are becoming stronger.";
                 document.getElementById('vibe-aesthetic').checked = true;
                 document.getElementById('ratio-9-16').checked = true;
             } else if (template === 'educational') {
-                firstScript.value = "你知道吗，蜂蜜几乎不会自然变质。\n考古学家曾在古埃及墓葬里发现三千多年前的蜂蜜。\n它依然可以食用。\n原因是蜂蜜含水量低、酸性强，细菌很难在里面生长。";
+                firstScript.value = "Did you know honey almost never spoils naturally?\nArchaeologists found honey over three thousand years old in an Egyptian tomb.\nIt was still edible.\nHoney has very little water and is acidic, making it difficult for bacteria to grow.";
                 document.getElementById('vibe-general').checked = true;
                 document.getElementById('ratio-16-9').checked = true;
             } else if (template === 'storytelling') {
-                firstScript.value = "那家旧书店只在雨夜开门。\n小女孩在最里面的书架上，发现了一本没有书名的地图册。\n她刚翻开第一页，柜台上的钟就停了。\n地图中央，慢慢浮现出她家的地址。";
+                firstScript.value = "The old bookstore opened only on rainy nights.\nA girl found a map book with no title on the back shelf.\nWhen she opened the first page, the clock on the counter stopped.\nHer home address slowly appeared in the center of the map.";
                 document.getElementById('vibe-aesthetic').checked = true;
                 document.getElementById('ratio-9-16').checked = true;
             } else if (template === 'lofi_vibes') {
-                firstScript.value = "深夜的雨敲在窗户上。\n桌上还有一杯温热的咖啡。\n远处的城市灯光慢慢散开。\n这一刻，世界终于安静下来。";
+                firstScript.value = "Rain tapped against the window late at night.\nA warm cup of coffee sat on the desk.\nThe distant city lights slowly blurred.\nFor a moment, the world finally became quiet.";
                 document.getElementById('vibe-lofi').checked = true;
                 document.getElementById('ratio-9-16').checked = true;
             } else if (template === 'news') {
-                firstScript.value = "最新消息，科学家发现了一颗可能适合生命存在的类地行星。\n它距离地球约二十光年，围绕一颗红矮星运行。\n研究团队正在进一步确认那里是否存在水和大气。\n这项发现可能会改写我们对宜居星球的认识。";
+                firstScript.value = "Scientists have discovered an Earth-like planet that may support life.\nIt is about twenty light-years away and orbits a red dwarf star.\nResearchers are checking whether it has water and an atmosphere.\nThe discovery could change what we know about habitable worlds.";
                 document.getElementById('vibe-general').checked = true;
                 document.getElementById('ratio-16-9').checked = true;
                 document.getElementById('subtitle-style').value = 'yellow_box';
             } else if (template === 'tutorial') {
-                firstScript.value = "三步做出一杯更稳定的手冲咖啡。\n第一步，把咖啡豆磨到中细研磨。\n第二步，把水温控制在九十二到九十五度。\n第三步，绕圈慢慢注水，让香气充分释放。";
+                firstScript.value = "Make a better pour-over coffee in three steps.\nFirst, grind the beans to a medium-fine texture.\nSecond, keep the water between 92 and 95 degrees Celsius.\nThird, pour slowly in circles to release the aroma.";
                 document.getElementById('vibe-general').checked = true;
                 document.getElementById('ratio-9-16').checked = true;
                 document.getElementById('subtitle-style').value = 'bold_outline';
@@ -296,10 +296,6 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
             { name: '🇵🇰 Asad', value: 'ur-PK-AsadNeural' },
             { name: '🇵🇰 Uzma', value: 'ur-PK-UzmaNeural' }
         ],
-        'zh-CN': [
-            { name: '🇨🇳 云扬（男声）', value: 'zh-CN-YunyangNeural' },
-            { name: '🇨🇳 晓晓（女声）', value: 'zh-CN-XiaoxiaoNeural' }
-        ],
         'ja-JP': [
             { name: '🇯🇵 Keita', value: 'ja-JP-KeitaNeural' },
             { name: '🇯🇵 Nanami', value: 'ja-JP-NanamiNeural' }
@@ -309,7 +305,7 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
     function updateVoices() {
         const lang = languageSelect.value;
         const voices = voiceMap[lang] || [];
-        voiceSelect.innerHTML = voices.map(v => `<option value="${v.value}">${v.name}</option>`).join('') + '<option value="none">🔇 不配音（仅素材模式）</option>';
+        voiceSelect.innerHTML = voices.map(v => `<option value="${v.value}">${v.name}</option>`).join('') + '<option value="none">🔇 No voiceover</option>';
     }
 
     function applySuspenseDefaults() {
