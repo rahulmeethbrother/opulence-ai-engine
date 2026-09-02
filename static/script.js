@@ -334,7 +334,7 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
         const subtitleStyle = document.getElementById('subtitle-style');
         if (subtitleStyle) subtitleStyle.value = 'high_retention';
 
-        if (topicInput) topicInput.placeholder = '短主题：半夜收到已故室友的短信。也可以直接粘贴长篇故事，系统会自动改写成长版解说脚本。';
+        if (topicInput) topicInput.placeholder = 'Enter a topic, idea, or source text. You can also paste a long story and generate a narration script.';
     }
 
     if (languageSelect) {
