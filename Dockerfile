@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+FROM jrottenberg/ffmpeg:9-nvidia
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VIDEO_CODEC=h264_nvenc
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip ffmpeg fonts-noto-cjk \
+    python3 python3-pip fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -19,4 +19,5 @@ RUN python3 -m playwright install --with-deps chromium
 
 RUN mkdir -p /app/downloads
 EXPOSE 8000
+ENTRYPOINT []
 CMD ["python3", "app.py"]
