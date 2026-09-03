@@ -537,7 +537,8 @@ class VideoEngine:
                 codec = "libx264"
         final_video.write_videofile(
             str(output_filename), fps=15, codec=codec, audio_codec='aac',
-            preset='ultrafast', threads=max(4, os.cpu_count() or 4),
+            preset='p1' if codec == 'h264_nvenc' else 'ultrafast',
+            threads=max(4, os.cpu_count() or 4),
         )
         if not output_filename.exists() or output_filename.stat().st_size <= 0:
             print(f"❌ Video export failed or empty: {output_filename}")
