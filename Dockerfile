@@ -4,7 +4,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    VIDEO_CODEC=h264_nvenc
+    VIDEO_CODEC=h264_nvenc \
+    IMAGEIO_FFMPEG_EXE=/usr/local/bin/ffmpeg
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip fonts-noto-cjk \
