@@ -530,7 +530,7 @@ new MutationObserver(translateDynamicUi).observe(document.body, { childList: tru
         const autoVideo = document.querySelector('input[name="auto_video"]:checked').value === 'true';
         const ytUpload = document.querySelector('input[name="yt_upload"]:checked').value === 'true';
         const emojiSubtitles = document.querySelector('input[name="emoji_subtitles"]:checked').value === 'true';
-        const watermark = document.querySelector('input[name="watermark"]:checked').value === 'true';
+        const watermark = false;
 
         // Get saved API keys
         const keys = getKeys();
