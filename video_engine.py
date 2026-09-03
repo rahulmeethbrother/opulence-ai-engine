@@ -332,8 +332,8 @@ class VideoEngine:
                         clip = clip.subclipped(0, clip_duration)
                     return clip.resized(height=1080)
 
-                clip = ImageClip(file_path).with_duration(clip_duration).resized(height=1080)
-                return apply_ken_burns(clip, clip_duration)
+                # Static image scenes avoid expensive per-frame zoom calculations.
+                return ImageClip(file_path).with_duration(clip_duration).resized(height=1080)
 
             if duration > 5 and len(preferred_files) > 1:
                 num_segments = int(duration / segment_seconds) + 1
